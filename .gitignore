@@ -1,0 +1,10 @@
+/code_craft_2025/
+/data/
+/interactor/
+/replay/
+/demos/
+/note/
+*.pdf
+*.pyc
+*.txt
+
