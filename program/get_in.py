@@ -1,5 +1,6 @@
 import sys
 import time
+from typing import List, Tuple
 
 
 def log(string):
@@ -53,7 +54,7 @@ def write_input():
     return write_objects
 
 
-def read_input():
+def read_input() -> Tuple[int, List, List]:
     """_summary_
 
     Returns:
@@ -71,10 +72,7 @@ def read_input():
     return n_read, read_req_id, read_obj_id
 
 
-def pre_input() -> tuple[
-    tuple[int, int, int, int, int],
-    tuple[list[list[int]], list[list[int]], list[list[int]]],
-]:
+def pre_input() -> Tuple[Tuple, Tuple]:
     """get pre input and action;
         T: timestamps, M: tag numbers, N: volume numbers, V: capacity of volume, G: tokens
 

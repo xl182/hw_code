@@ -1,3 +1,6 @@
+from typing import Any, List, Union
+
+
 from output import *
 from get_in import *
 from algorithm import *
@@ -6,30 +9,30 @@ import traceback
 import time
 import math
 
-tag_assignments: list[int, int, int, int]  # [volume index] the assignments of each tag
+tag_assignments: Any  # [volume index] the assignments of each tag
 
 delete_info: list
 write_info: list
 read_info: list
 
 
-write_bounds: list[list[int, int]]  # [[left_bound, right_bound] * 3] * M
-write_positions: list[list[int, int, int]]  # [position * 3] * M
-write_index: list[list[int, int, int]]  # [volume_index * 3] * M
-write_cost: list[int]  # [size(int)]  the min cost of each tag
+write_bounds: List[List[List[int]]]  # [[left_bound, right_bound] * 3] * M
+write_positions: List[List[int]]  # [position * 3] * M
+write_index: List[List[int]]  # [volume_index * 3] * M
+write_cost: List[int]  # [size(int)]  the min cost of each tag
 
-write_dict: list[list[int, int, int, int]]  # [obj_tag, obj_size, position, index]
-dist: list  # simulate the disk  
+write_dict: List[List[int]]  # [obj_tag, obj_size, position, index]
+dist: List  # simulate the disk  
 
-empty_spaces: list[list[int, int, int]]  # [(size, disk, pointer)] * M
-empty_space_size: list[int]  # [empty size of each tag * M]
-used_spaces: list[int]  # [used_size * N], the used space of each volume
-fragmented_spaces: list
+empty_spaces: List[List[int]]  # [(size, disk, pointer)] * M
+empty_space_size: List[int]  # [empty size of each tag * M]
+used_spaces: List[int]  # [used_size * N], the used space of each volume
+fragmented_spaces: List
 
-read_requests: list[int]   # [obj_id] * MAX_REQUEST_NUM id
-current_needle: list[int]  # [position] * (N + 1)
+read_requests: List[List[int]]   # [obj_id] * MAX_REQUEST_NUM id
+current_needle: List[int]  # [position] * (N + 1)
 
-disk: list
+disk: List
 
 # init 
 COPY_NUM = 3
@@ -57,12 +60,58 @@ def timestamp_action():
     sys.stdout.flush()
 
 def init_variables(T, M, N, V, G):
+    log(f"{T, M, N, V, G}")
+    global read_positions, empty_spaces, used_spaces, disk, disk_cost
+    global write_index, write_positions, write_bounds
+    disk = [[-1 for j in range(V + 1)] for i in range(N + 1)]  # init disk
+    
     read_positions = []
+    
     empty_spaces = [[] for _ in range(M+1)]  # [[[] * size] * M + 1]
     used_spaces = [0 for _ in range(M+1)]
     
-def allocate_spaces():
-    pass
+    write_index = [[0 for _ in range(COPY_NUM+1)] for i in range(M+1)]  # volume index of each tag
+    write_positions = [[0 for _ in range(COPY_NUM+1)] for i in range(M+1)]
+    write_bounds = [[[0, 0], [0, 0], [0, 0], [0, 0]] for i in range(M+1)]
+    
+    # the used space of each volume
+    disk_cost = [0 for _ in range(N+1)]
+    
+    
+def allocate_spaces(min_cost: List[int], max_cost: List[int], assignments: List[List[int]]):
+    global disk_cost, tag_assignments
+    
+    log(f"min_cost: {min_cost}, max_cost: {max_cost}")
+    for i in range(1, len(tag_assignments)):
+        for j in range(1, COPY_NUM+1):
+            index = tag_assignments[i][j]
+            disk_cost[index] += min_cost[i]    
+    log(f"disk cost: {disk_cost}, sum: {sum(disk_cost)}")
+    
+    need_spaces = [max_cost[i]-min_cost[i] for i in range(len(min_cost))]
+    
+    disk_tags = [[] for _ in range(N+1)]
+    for i in range(1, len(assignments)):
+        for index in assignments[i]:
+            if index:
+                disk_tags[index].append(i)
+    log(f"disk tags: {disk_tags}")
+    
+    free_spaces = [V - cost for cost in disk_cost]  # [V, ....]  the firts V is nothing
+    fragment_space_sizes = [[] for _ in range(N+1)]
+    for i in range(1, len(disk_tags)):
+        weights = [0 for _ in range(len(disk_tags[i])-1)]
+        for j in range(len(disk_tags[i])-1):
+            tag1, tag2 = disk_tags[i][j], disk_tags[i][j+1]
+            weights[j] = need_spaces[tag1] + need_spaces[tag2]
+        space_sizes = [int(free_spaces[i] * weights[_] / sum(weights)) for _ in range(len(weights)-1)]
+        space_sizes.append(free_spaces[i] - sum(space_sizes))
+        fragment_space_sizes[i] = space_sizes
+        log(f"all_space_cost: {disk_cost[i]+sum(space_sizes)}")
+    log(f"fragment_space_sizes: {fragment_space_sizes}")
+    
+    
+    
 
 def pre_action():
     global T, M, N, V, G
@@ -75,58 +124,39 @@ def pre_action():
     para, info = pre_input()
 
     T, M, N, V, G = para
+    init_variables(T, M, N, V, G)
+
+    # calc the min cost of each tag, info index start from 1
     delete_info, write_info, read_info = info
-
-    disk = [[-1 for j in range(V + 1)] for i in range(N + 1)]  # init disk
-
-    # calc the min cost of each tag
-    write_cost = calc_occupy(write_info, delete_info, M)
-    log(f"write_cost: {write_cost}")
+    finnal_cost_list, max_cost_list = calc_occupy(write_info, delete_info, M)
+    log(f"final: {finnal_cost_list}, max: {max_cost_list}")
 
     # 
-    write_cost.remove(0)
-    tag_assignments = allocate_files(write_cost, N, V)  # vloume
-    write_cost.insert(0, 0)
-    
-    # the used space of each volume
-    disk_cost = [0 for _ in range(N+1)]
-    
-    for i in range(len(tag_assignments)):
-        tag_assignments[i].insert(0, None)
-    tag_assignments.insert(0, [None, None, None, None])
+    tag_assignments = allocate_files(finnal_cost_list, N, V)  # vloume
     log(f"write assignment: {tag_assignments}")
+    if not tag_assignments:
+        log("None assigned")
+        return
     
-    for i in range(1, len(tag_assignments)):
-        for j in range(1, COPY_NUM+1):
-            index = tag_assignments[i][j]
-            disk_cost[index] += write_cost[i]    
-    log(f"disk cost: {disk_cost}, sum: {sum(disk_cost)}")
+    # index start from 1
+    allocate_spaces(finnal_cost_list, max_cost_list, tag_assignments)
     
-    write_index = [[0 for _ in range(COPY_NUM+1)] for i in range(M+1)]  # volume index of each tag
-    write_positions = [[0 for _ in range(COPY_NUM+1)] for i in range(M+1)]
-    write_bounds = [[[0, 0], [0, 0], [0, 0], [0, 0]] for i in range(M+1)]
-
-    volume_positions = [1 for i in range(N+1)]
+    sys_break()
+    
     for i in range(1, len(write_positions)):
         for j in range(1, COPY_NUM+1):
             index = tag_assignments[i][j]
             write_index[i][j] = index
-            write_positions[i][j] = volume_positions[index]
-            write_bounds[i][j][0] = volume_positions[index]
-            volume_positions[index] += write_cost[i]
-            write_bounds[i][j][1] = volume_positions[index]
             
     log(f"write_index: {write_index}")
     log(f"write_positions: {write_positions}")
     log(f"write_bounds: {write_bounds}")
     
-    init_variables(T, M, N, V, G)
-
     print("OK")
     log("pre_action finished")
     sys.stdout.flush()
     
-    return para
+    return 
 
 def delete_object(delete_objs_id):
     log("delete objects")
@@ -183,8 +213,7 @@ def do_write_object(obj_id, obj_size, obj_tag):
         else:
             if position < write_bounds[obj_tag][c][1]:
                 continue
-            
-            
+
             log(f"current size: {obj_size}, current id: {obj_id}, cuurrent_tag: {obj_tag}")
             log(f"used spaces: {used_spaces}")
             log("no suitable place")

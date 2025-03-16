@@ -2,6 +2,8 @@ import heapq
 import utils
 
 def allocate_files(files, num_folders=10, capacity=5192):
+    files.remove(0)
+    
     folder_capacity = capacity * num_folders
     folders = [{'remaining': folder_capacity, 'index': i} for i in range(num_folders)]
     heap = [(-folder_capacity, i) for i in range(num_folders)]
@@ -91,6 +93,8 @@ def allocate_files(files, num_folders=10, capacity=5192):
             's2': {'size': s2, 'locations': best_s2}
         }
     
+    
+    
     for f in folders:
         if f['remaining'] < 0:
             return None
@@ -106,6 +110,11 @@ def allocate_files(files, num_folders=10, capacity=5192):
             utils.log(f"文件 {file_id} 完整存储，备份位置: {details['locations']}")
             assignments[file_id] = details['locations']
             assignments[file_id] = [_+1 for _ in assignments[file_id]]
+    
+    files.insert(0, 0)
+    for i in range(len(assignments)):
+        assignments[i].insert(0, None) # type: ignore
+    assignments.insert(0, [None, None, None, None]) # type: ignore
     return assignments
 
 
@@ -116,5 +125,9 @@ def calc_occupy(write_info, delete_info, M):
     for i in range(1, len(write_info)):
         finnal_cost_list[i] += sum(write_info[i]) - sum(delete_info[i])
         
-    occpuy_list = finnal_cost_list
-    return occpuy_list
+    cost_tmp = [0 for _ in range(M+1)]
+    for i in range(1, len(write_info)):
+        for j in range(len(write_info[-1])):
+            cost_tmp[i] += write_info[i][j] - delete_info[i][j]
+            max_cost_list[i] = max(max_cost_list[i], cost_tmp[i])
+    return finnal_cost_list, max_cost_list
