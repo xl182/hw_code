@@ -1,3 +1,4 @@
+import pickle
 import sys
 import time
 import traceback
@@ -15,6 +16,16 @@ def log(string):
     time_str = time.strftime("%H:%M:%S", time.localtime())
     with open("log.log", "a+") as f:
         f.write(f"{time_str}:  {string} \n")
+        
+def log_disk(disk, tag_dict):
+    for i in range(1, len(disk)):
+        for j in range(1, len(disk[i])):
+            if disk[i][j] == -1:
+                continue
+            obj_tag = tag_dict[disk[i][j]]
+            disk[i][j] = obj_tag
+        
+    pickle.dump(disk, open("disk.pkl", "wb"))
 
 
 class Object:
