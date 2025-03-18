@@ -1,9 +1,10 @@
 import dis
+from turtle import right
 from typing import Any, Dict, List, Union
 import copy
 
 from matplotlib.font_manager import weight_dict
-from numpy import diff
+from numpy import diff, positive
 from sympy import public
 
 
@@ -35,7 +36,8 @@ dist: List  # simulate the disk
 empty_spaces: List[List[List[int]]]  # [(size, disk, pointer)] * M
 obj_relation: List[List[List[int]]]  # [[[left tag, right tag] * tag] * N]
 # [[[size, [left pointer, right pointer], [left tag, right tag,] [left bound, right bound]] * tag] * N]
-public_spaces: List[List[List[List]]]
+public_bounds: List[List[List[int]]]  # [left bound, right bound] * ? * ?
+public_sizes: List[List[int]]
 used_spaces: List[int]  # [used_size * N], the used space of each volume
 fragmented_spaces: List
 
@@ -66,7 +68,7 @@ read_requests = [[] for _ in range(MAX_REQUEST_NUM)]
 def init_variables(T, M, N, V, G):
     if use_log:
         log(f"T, M, N, V, G: {T, M, N, V, G}")
-    global read_positions, obj_relation, public_spaces, empty_spaces, used_spaces, disk
+    global read_positions, obj_relation, empty_spaces, used_spaces, disk
     global write_index, write_positions, write_bounds
 
     disk = [[-1 for j in range(V + 1)] for i in range(N + 1)]  # init disk
@@ -83,14 +85,12 @@ def init_variables(T, M, N, V, G):
     write_bounds = [[[0, 0], [0, 0], [0, 0], [0, 0]] for i in range(M + 1)]
     # the used space of each volume
     obj_relation = [[[] for j in range(M + 1)] for i in range(N + 1)]
-    public_spaces = [
-        [[[0], [0, 0], [0, 0], [0, 0]] for j in range(M + 1)] for i in range(N + 1)
-    ]
 
 
 def allocate_spaces(
     min_cost: List[int], max_cost: List[int], assignments: List[List[int]]
 ):
+    global public_bounds, public_sizes
     if use_log:
         log(f"min_cost: {min_cost}, max_cost: {max_cost}")
 
@@ -139,15 +139,17 @@ def allocate_spaces(
 
     weights = [[0 for j in range(len(assignments[i]))] if i != 0 else [0] for i in range(len(assignments))]
     for i in range(1, len(assignments)):
-        for j in range(2, len(assignments[i])-1):
+        for j in range(2, len(assignments[i])):
             tag = assignments[i][j]
-            weights[i][j] = diff_spaces[i][j - 1] + diff_spaces[i][j] + diff_spaces[i][j + 1]
+            weights[i][j] = diff_spaces[i][j - 1] + diff_spaces[i][j]
     
-    public_sizes = [[0 for j in range(len(assignments[i]))] if i != 0 else [0] for i in range(len(assignments))]
+    public_sizes = [[-1 for j in range(len(assignments[i]))] if i != 0 else [-1] for i in range(len(assignments))]
+    public_bounds = [[[-1, -1] for j in range(len(assignments[i]))] if i != 0 else [[-1]] for i in range(len(assignments))]
     free_sizes = [V - disk_cost[i] for i in range(N + 1)]
     for i in range(1, len(assignments)):
-        for j in range(2, len(assignments[i])-1):
-            public_sizes[i][j] = int(free_sizes[i] * weights[i][j] / (sum(weights[i]) + 0.1))
+        for j in range(2, len(assignments[i])):
+            if sum(weights[i]) != 0:
+                public_sizes[i][j] = int(free_sizes[i] * weights[i][j] / (sum(weights[i])))
     if use_log:
         log(f"public sizes: {public_sizes}")
 
@@ -155,6 +157,7 @@ def allocate_spaces(
     volume_positions = [1 for i in range(N + 1)]
     copy_serial = [0 for _ in range(M + 1)]
     for i in range(1, len(assignments)):
+        positive_num = sum(i > 0 for i in public_sizes[i])
         for j in range(1, len(assignments[i])):
             tag = assignments[i][j]
             copy_serial[tag] += 1
@@ -162,14 +165,31 @@ def allocate_spaces(
             write_index[tag][copy_serial[tag]] = i
             write_positions[tag][copy_serial[tag]] = volume_positions[i]
             write_bounds[tag][copy_serial[tag]][0] = volume_positions[i]
-            volume_positions[i] += min_cost[tag] + public_spaces[i][tag][0][0]
+            volume_positions[i] += min_cost[tag]
             write_bounds[tag][copy_serial[tag]][1] = volume_positions[i]
+            
+            if public_sizes[i][j] > 0 and j != len(assignments[i]) - 1 and positive_num != 1:
+                public_bounds[i][j][0] = volume_positions[i]
+            if positive_num == 1 and j == len(assignments[i]) - 2:
+                public_bounds[i][j][0] = volume_positions[i]
+            volume_positions[i] += public_sizes[i][j]
+            
+            if public_sizes[i][j] > 0 and j != len(assignments[i]) - 1 and positive_num != 1:
+                public_bounds[i][j][1] = volume_positions[i]
+
+            if j == len(assignments[i]) - 2:
+                volume_positions[i] += public_sizes[i][j+1]
+                if public_sizes[i][j] > 0 or positive_num == 1:
+                    public_bounds[i][j][1] = volume_positions[i]
+                
         empty_spaces[0].append([volume_positions[i]])
 
     if use_log:
+        log(f"public bounds: {public_bounds}")
         log(f"write_index: {write_index}")
         log(f"write_positions: {write_positions}")
         log(f"write_bounds: {write_bounds}")
+    sys_break()
 
 
 def print_empty_spaces(empty_spaces):
@@ -207,120 +227,128 @@ def do_delete_object(delete_objs_id):
             log(f"delete finished: {write_dict[obj_id]}")
         print_empty_spaces(empty_spaces)
 
+def write_method_1(obj_id, obj_size, obj_tag, wo):
+    log(f"write method 1")
+    # copy: size, index, pointer
+    if use_log:
+        print_empty_spaces(empty_spaces)
+    copys = empty_spaces[obj_tag][obj_size].pop()
+    if use_log:
+        log(f"use released space... copys: {copys}")
+
+    for k in range(1, COPY_NUM + 1):
+        wo.write_disk_serial[k] = copys[k - 1][3]
+        wo.write_position[k] = copys[k - 1][2]
+        write_dict[obj_id].append(copys[k - 1])
+        used_spaces[wo.write_disk_serial[k]] += obj_size
+
+        for s in range(obj_size):
+            disk[wo.write_disk_serial[k]][wo.write_position[k] + s] = obj_id
+    if use_log:
+        log(
+            f"write id: {obj_id}, write size: {obj_size}, write tag: {obj_tag}, index: {wo.write_disk_serial}, position: {wo.write_position}"
+        )
+    wo.print_info()
+    return
+
+def write_method_2(obj_id, obj_size, obj_tag, wo):
+    log(f"write method 2")
+    # use the sequence space
+    for c in range(1, COPY_NUM + 1):
+        index = write_index[obj_tag][c]
+        position = write_positions[obj_tag][c]
+        used_spaces[index] += obj_size
+
+        write_positions[obj_tag][c] += obj_size
+        write_dict[obj_id].append([obj_tag, obj_size, position, index])
+
+        for s in range(obj_size):
+            disk[index][position + s] = obj_id
+
+        wo.write_disk_serial[c] = index
+        wo.write_position[c] = position
+    wo.print_info()
+    
+def write_method_3(obj_id, obj_size, obj_tag, wo):
+    exist_enough_space = False
+    for i in range(len(empty_spaces[obj_tag]) - 1, obj_size, -1):
+        if not empty_spaces[obj_tag][i]:
+            continue
+        exist_enough_space = True
+        copys = empty_spaces[obj_tag][i].pop()
+
+        tmp_list = []
+
+        for i in range(1, COPY_NUM + 1):
+            wo.write_disk_serial[i] = copys[i - 1][3]
+            wo.write_position[i] = copys[i - 1][2]
+
+            used_spaces[wo.write_disk_serial[i]] += obj_size
+
+            copys[i - 1][1] -= obj_size  # space used, left size
+            copys[i - 1][2] += obj_size  # position increased
+
+            for s in range(obj_size):
+                disk[wo.write_disk_serial[i]][wo.write_position[i] + s] = obj_id
+
+            write_dict[obj_id].append(copys[i - 1])
+            if copys[i - 1][1]:
+                tmp_list.append(copys[i - 1])
+        if copys[i - 1][1]:
+            empty_spaces[obj_tag][copys[i - 1][1]].append(tmp_list)
+        break
+    
+    if exist_enough_space:
+        wo.print_info()
+    return exist_enough_space
+    
 
 def do_write_object(obj_id, obj_size, obj_tag):
     global write_dict, empty_spaces, used_spaces, disk
-    wo = WriteOutput()
-    wo.write_id = obj_id
-    wo.write_size = obj_size
+    wo = WriteOutput(obj_id, obj_size)
 
     write_dict[obj_id] = []  # position, index
 
     # use released space first
     if empty_spaces[obj_tag][obj_size]:
-        # copy: size, index, pointer
-        if use_log:
-            print_empty_spaces(empty_spaces)
-        copys = empty_spaces[obj_tag][obj_size].pop()
-        if use_log:
-            log(f"use released space... copys: {copys}")
-
-        for k in range(1, COPY_NUM + 1):
-            wo.write_disk_serial[k] = copys[k - 1][3]
-            wo.write_position[k] = copys[k - 1][2]
-            write_dict[obj_id].append(copys[k - 1])
-            used_spaces[wo.write_disk_serial[k]] += obj_size
-
-            for s in range(obj_size):
-                disk[wo.write_disk_serial[k]][wo.write_position[k] + s] = obj_id
-        if use_log:
-            log(
-                f"write id: {obj_id}, write size: {obj_size}, write tag: {obj_tag}, index: {wo.write_disk_serial}, position: {wo.write_position}"
-            )
-        wo.print_info()
+        write_method_1(obj_id, obj_size, obj_tag, wo)
         return
 
-    index = write_index[obj_tag][1]
     position = write_positions[obj_tag][1]
     if position + obj_size < write_bounds[obj_tag][1][1]:
-        # use the sequence space
-        for c in range(1, COPY_NUM + 1):
-            index = write_index[obj_tag][c]
-            position = write_positions[obj_tag][c]
-            used_spaces[index] += obj_size
-
-            write_positions[obj_tag][c] += obj_size
-            write_dict[obj_id].append([obj_tag, obj_size, position, index])
-
-            for s in range(obj_size):
-                disk[index][position + s] = obj_id
-
-            wo.write_disk_serial[c] = index
-            wo.write_position[c] = position
-    else:
-        # use other empty space
-        if use_log:
-            log("out of bound use former empty space or other spaces")
-        if use_log:
-            log(
-                f"current size: {obj_size}, current id: {obj_id}, cuurrent_tag: {obj_tag}"
-            )
-        if use_log:
-            log(f"current position: {position}, current index: {index}")
+        write_method_2(obj_id, obj_size, obj_tag, wo)
+        return
+    
+    # use other empty space
+    if use_log:
+        log("out of bound use former empty space or other spaces")
         print_empty_spaces(empty_spaces)
 
-        exist_enough_space = False
-        for i in range(len(empty_spaces[obj_tag]) - 1, obj_size, -1):
-            if not empty_spaces[obj_tag][i]:
-                continue
-            exist_enough_space = True
-            copys = empty_spaces[obj_tag][i].pop()
+    if write_method_3(obj_id, obj_size, obj_tag, wo):
+        log(f"write method 3")
+        return
 
-            tmp_list = []
-
-            for i in range(1, COPY_NUM + 1):
-                wo.write_disk_serial[i] = copys[i - 1][3]
-                wo.write_position[i] = copys[i - 1][2]
-
-                used_spaces[wo.write_disk_serial[i]] += obj_size
-
-                copys[i - 1][1] -= obj_size  # space used, left size
-                copys[i - 1][2] += obj_size  # position increased
-
-                for s in range(obj_size):
-                    disk[wo.write_disk_serial[i]][wo.write_position[i] + s] = obj_id
-
-                write_dict[obj_id].append(copys[i - 1])
-                if copys[i - 1][1]:
-                    tmp_list.append(copys[i - 1])
-            if copys[i - 1][1]:
-                empty_spaces[obj_tag][copys[i - 1][1]].append(tmp_list)
-            break
-
-        if not exist_enough_space:
-            indexs = sorted(
-                range(len(empty_spaces[0])), key=lambda i: empty_spaces[0][i][0]
-            )[0:3]
-            for i in range(1, COPY_NUM + 1):
-                wo.write_disk_serial[i] = indexs[i - 1]
-                wo.write_position[i] = empty_spaces[0][indexs[i - 1]][0]
-                empty_spaces[0][indexs[i - 1]][0] += obj_size
-                write_dict[obj_id].append(
-                    [obj_tag, obj_size, wo.write_position[i], indexs[i - 1]]
-                )
-
-                if empty_spaces[0][indexs[i - 1]][0] > V:
-                    log_disk(disk, tag_dict)
-                    sys_break()
-                for s in range(obj_size):
-                    disk[wo.write_disk_serial[i]][wo.write_position[i] + s] = obj_id
-
-    if use_log:
-        log(f"used spaces: {used_spaces}")
-    if use_log:
-        log(
-            f"write id: {obj_id}, write size: {obj_size}, write tag: {obj_tag}, index: {wo.write_disk_serial}, position: {wo.write_position}"
+    # use the public space
+    
+    for i in range(1, N + 1):
+        left_tag, right = obj_relation[i][obj_tag]
+        if [i][left_tag][0][0]:
+            pass
+    
+    log(f"write method 4")
+    indexs = sorted(range(len(empty_spaces[0])), key=lambda i: empty_spaces[0][i][0])[0:3]
+    for i in range(1, COPY_NUM + 1):
+        wo.write_disk_serial[i] = indexs[i - 1]
+        wo.write_position[i] = empty_spaces[0][indexs[i - 1]][0]
+        empty_spaces[0][indexs[i - 1]][0] += obj_size
+        write_dict[obj_id].append(
+            [obj_tag, obj_size, wo.write_position[i], indexs[i - 1]]
         )
+        if empty_spaces[0][indexs[i - 1]][0] > V:
+            log_disk(disk, tag_dict)
+            sys_break()
+        for s in range(obj_size):
+            disk[wo.write_disk_serial[i]][wo.write_position[i] + s] = obj_id
     wo.print_info()
 
 

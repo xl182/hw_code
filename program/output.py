@@ -5,11 +5,11 @@ COPY_NUM = 3
 
 
 class WriteOutput(object):
-    def __init__(self):
-        self.write_id = -1
+    def __init__(self, obj_id, obj_size):
+        self.write_id = obj_id
         self.write_disk_serial = [-1 for i in range(0, COPY_NUM + 1)]
         self.write_position = [-1 for i in range(0, COPY_NUM + 1)]
-        self.write_size = -1
+        self.write_size = obj_size
 
     def print_info(self):
         print(self.write_id)
@@ -19,9 +19,9 @@ class WriteOutput(object):
             for j in range(self.write_size):
                 print(f" {self.write_position[i]+j}", end="")
             print()
+        log(f"write {self.write_id} to disk {self.write_disk_serial} at position {self.write_position}")
 
 
-    
 def print_abort(abort_requests):
     print(len(abort_requests))
     for i in range(len(abort_requests)):
