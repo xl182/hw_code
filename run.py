@@ -66,7 +66,7 @@ if __name__ == '__main__':
     if args.replay is not None and len(args.replay) > REPLAY_LEN:
         parser.error("argument --replay/-r: accepts at most 10 arguments")
         
-    if args.log:
+    if args.log is not None and args.log[0] == 1:
         with open("enable_log.txt", "w") as f:
             f.write("True")
     else:
