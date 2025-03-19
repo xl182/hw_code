@@ -64,7 +64,7 @@ class DiskVisualizer(QMainWindow):
             cb.stateChanged.connect(self.update_display)
             color_layout.addWidget(cb)
             self.checkboxes[value] = cb
-            
+
         color_group.setLayout(color_layout)
 
         # 滚动区域
