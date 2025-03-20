@@ -27,3 +27,8 @@ class WriteOutput(object):
             
         if use_log:
             log(f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}")
+
+
+def print_abort(abort_request_id):
+    print('\n'.join([str(len(abort_request_id))] + list(map(str, abort_request_id))))
+    sys.stdout.flush()

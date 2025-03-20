@@ -23,9 +23,9 @@ def delete_input():
     Returns:
         _type_: delete_id
     """
-    
-    n_delete = int(input())
-    delete_id = [int(input()) for _ in range(n_delete)]
+    read = sys.stdin.readline
+    n_delete = int(read())
+    delete_id = [int(read()) for _ in range(n_delete)]
     return n_delete, delete_id
 
 
@@ -35,19 +35,8 @@ def write_input():
     Returns:
         _type_: write_objects: (id, size, tag)
     """
-    n_write = int(input())
-    write_objects = []
-
-    for _ in range(1, n_write + 1):
-        # input
-        write_input = input().split()
-        
-        write_input = list(map(int, write_input))
-        
-        tmp = []
-        for i in range(3):
-            tmp.append(write_input[i])
-        write_objects.append(tmp)
+    n_write = int(sys.stdin.readline())
+    write_objects = [list(map(int, sys.stdin.readline().split()))[:3] for _ in range(n_write)]
     return write_objects
 
 
@@ -75,9 +64,9 @@ def pre_input() -> Tuple[Tuple, Tuple]:
     write_info: list[list[int]] = [[]]
     read_info: list[list[int]] = [[]]
 
-    user_input = input().split()
+    read = sys.stdin.readline
+    user_input = read().split()
     T = int(user_input[0])  # timestamps
-
     M = int(user_input[1])  # tag numbers
     N = int(user_input[2])  # volume numbers
     V = int(user_input[3])  # volume
@@ -85,15 +74,15 @@ def pre_input() -> Tuple[Tuple, Tuple]:
 
 
     for item in range(1, M + 1):
-        line = input()
+        line = read()
         delete_info.append(list(map(int, line.split())))
 
     for item in range(1, M + 1):
-        line = input()
+        line = read()
         write_info.append(list(map(int, line.split())))
 
     for item in range(1, M + 1):
-        line = input()
+        line = read()
         read_info.append(list(map(int, line.split())))
 
     para = T, M, N, V, G

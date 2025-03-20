@@ -1,23 +1,2 @@
-21:56:43:  starting... 
-21:56:43:  T: 86400, M: 16, N: 10, V: 5792, G: 350 
-21:57:41:  method 0 time cost: 2.43934965133667 
-21:57:41:  method 1 time cost: 0.6402020454406738 
-21:57:41:  method 2 time cost: 0.6021630764007568 
-21:57:41:  method 3 time cost: 14.002837419509888 
-21:57:41:  method 4 time cost: 24.397692680358887 
-21:57:41:  method 5 time cost: 3.3196699619293213 
-21:57:41:  method 6 time cost: 6.48692774772644 
-21:57:41:  method 7 time cost: 0.0 
-21:57:41:  method 8 time cost: 0.0 
-21:57:41:  method 9 time cost: 0.0 
-21:57:41:  method 10 time cost: 0.0 
-21:57:41:  method 11 time cost: 0.0 
-21:57:41:  method 12 time cost: 0.0 
-21:57:41:  method 13 time cost: 0.0 
-21:57:41:  method 14 time cost: 0.0 
-21:57:41:  method 15 time cost: 0.0 
-21:57:41:  method 16 time cost: 0.0 
-21:57:41:  method 17 time cost: 0.0 
-21:57:41:  method 18 time cost: 0.0 
-21:57:41:  method 19 time cost: 0.0 
-21:57:41:  write_time: 3.053110122680664, delete_time: 17.951818227767944, read_time: 34.84149503707886 
+23:41:01:  starting... 
+23:41:01:  T: 86400, M: 16, N: 10, V: 5792, G: 350 
