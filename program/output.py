@@ -7,20 +7,26 @@ COPY_NUM = 3
 class WriteOutput(object):
     def __init__(self, obj_id, obj_size):
         self.write_id = obj_id
-        self.write_disk_serial = [-1 for i in range(0, COPY_NUM + 1)]
-        self.write_position = [-1 for i in range(0, COPY_NUM + 1)]
-        self.write_size = obj_size
+        self.disk_serial = [-1 for i in range(0, COPY_NUM + 1)]
+        self.position = [-1 for i in range(0, COPY_NUM + 1)]
+        self.size = obj_size
+    
+    def record_disk(self, disk, obj_id, obj_size, index, position):
+        for s in range(obj_size):
+            disk[index][position + s] = obj_id
 
-    def print_info(self, use_log=False):
+    def print_info(self, disk, use_log=False):
         print(self.write_id)
         
         for i in range(1, COPY_NUM + 1):
-            print(self.write_disk_serial[i], end="")
-            for j in range(self.write_size):
-                print(f" {self.write_position[i]+j}", end="")
+            print(self.disk_serial[i], end="")
+            for j in range(self.size):
+                print(f" {self.position[i]+j}", end="")
             print()
+            self.record_disk(disk, self.write_id, self.size, self.disk_serial[i], self.position[i])
+            
         if use_log:
-            log(f"write {self.write_id} (size: {self.write_size})to disk {self.write_disk_serial} at position {self.write_position}")
+            log(f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}")
 
 
 def print_abort(abort_requests):

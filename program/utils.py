@@ -12,6 +12,11 @@ def sys_break():
     print("System break")
     log("System break")
     exit(0)
+    
+def log_test(string):
+    time_str = time.strftime("%H:%M:%S", time.localtime())
+    with open("log_test.log", "a+") as f:
+        f.write(f"{time_str}:  {string} \n")
 
 
 def log(string):
