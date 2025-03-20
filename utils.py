@@ -1,25 +1,25 @@
-import pickle
-import sys
 import time
 import traceback
 
-with open("log.log", "w") as f:
-    pass
+if_online = True
+
+if not if_online:
+    with open("log.log", "w") as f:
+        pass
 
 
 def sys_break():
+    if if_online:
+        return
     print("================================")
     print("System break")
     log("System break")
     exit(0)
     
-def log_test(string):
-    time_str = time.strftime("%H:%M:%S", time.localtime())
-    with open("log_test.log", "a+") as f:
-        f.write(f"{time_str}:  {string} \n")
-
 
 def log(string):
+    if if_online:
+        return
     time_str = time.strftime("%H:%M:%S", time.localtime())
     with open("log.log", "a+") as f:
         f.write(f"{time_str}:  {string} \n")
@@ -32,23 +32,15 @@ def log_disk(disk, tag_dict):
                 continue
             obj_tag = tag_dict[disk[i][j]]
             disk[i][j] = obj_tag
-
+    if if_online:
+        return
+    import pickle
     pickle.dump(disk, open("disk.pkl", "wb"))
 
 
-class Object:
-    def __init__(self, id: int, size: int, tag: int):
-        self.id = id
-        self.size = size
-        self.tag = tag
-
-
-class WritePointer:
-    def __init__(self):
-        pass
-
-
 def print_error(e):
+    if if_online:
+        return
     log("===== 捕获到异常 =====")
 
     log(f"错误类型: {type(e).__name__}")

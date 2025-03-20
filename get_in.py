@@ -1,13 +1,7 @@
-import os
 import sys
-from typing import List, Tuple
+from utils import log
+from typing import Tuple
 
-
-def log(string):
-    import time
-    time_str = time.strftime("%H:%M:%S", time.localtime())
-    with open("log.log", "a+") as f:
-        f.write(f"{time_str}:  {string} \n")
 
 
 def timestamp_action():

@@ -1,18 +1,18 @@
 from typing import Any, List
 import copy
 
-
+import sys
 from output import *
 from get_in import *
 from algorithm import *
 from utils import *
 
 
-with open("enable_log.txt", "r") as f:
-    use_write_log = f.read().strip() == "True"
-    
-with open("log_test.log", "w") as f:
-    pass
+use_write_log = False
+if not if_online:
+    with open("enable_log.txt", "r") as f:
+        use_write_log = f.read().strip() == "True"
+
 
 tag_assignments: Any  # [volume index] the assignments of each tag
 disk_assignments: Any  # [tag] the assignments of each disk

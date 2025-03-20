@@ -30,7 +30,7 @@ class DiskVisualizer(QMainWindow):
 
     def load_data(self):
         """加载pickle数据并提取后10个磁盘"""
-        with open("disk.pkl", "rb") as f:
+        with open("./program/disk.pkl", "rb") as f:
             data = pickle.load(f)  #
         return data[1:]  # 取后10个磁盘
 
