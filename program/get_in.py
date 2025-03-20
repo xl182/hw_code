@@ -1,9 +1,10 @@
+import os
 import sys
-import time
 from typing import List, Tuple
 
 
 def log(string):
+    import time
     time_str = time.strftime("%H:%M:%S", time.localtime())
     with open("log.log", "a+") as f:
         f.write(f"{time_str}:  {string} \n")
@@ -22,13 +23,9 @@ def delete_input():
     Returns:
         _type_: delete_id
     """
-
-    delete_id = []
-
+    
     n_delete = int(input())
-    for i in range(1, n_delete + 1):
-        delete_id.append(int(input()))  # object to be deleted
-
+    delete_id = [int(input()) for _ in range(n_delete)]
     return n_delete, delete_id
 
 
@@ -54,22 +51,17 @@ def write_input():
     return write_objects
 
 
-def read_input() -> Tuple[int, List, List]:
+def read_input():
     """_summary_
 
     Returns:
         _type_: read_req_id, read_obj_id
     """
-    n_read = int(input())
-    read_req_id: list = []
-    read_obj_id: list = []
+    read = sys.stdin.readline
+    n_read = int(read())
+    read_req = [list(map(int, read().split())) for _ in range(n_read)]
 
-    for _ in range(1, n_read + 1):
-        read_input = input().split()
-        read_req_id.append(int(read_input[0]))
-        read_obj_id.append(int(read_input[1]))
-
-    return n_read, read_req_id, read_obj_id
+    return n_read, read_req
 
 
 def pre_input() -> Tuple[Tuple, Tuple]:

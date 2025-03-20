@@ -27,10 +27,3 @@ class WriteOutput(object):
             
         if use_log:
             log(f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}")
-
-
-def print_abort(abort_requests):
-    print(len(abort_requests))
-    for i in range(len(abort_requests)):
-        print(f"{abort_requests[i]}")
-    sys.stdout.flush()
