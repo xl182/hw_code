@@ -764,8 +764,8 @@ def delete_action():
     # abort read request id
     abort_request_id = []
     for obj_id in delete_obj_id:
-        abort_request_id = read_requests[obj_id]
-    
+        abort_request_id.extend(read_requests[obj_id])
+
     # delete objects
     if n_delete != 0:
         do_delete_object(delete_obj_id)
