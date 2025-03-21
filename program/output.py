@@ -24,7 +24,7 @@ class WriteOutput(object):
                 print(f" {self.position[i]+j}", end="")
             print()
             self.record_disk(disk, self.write_id, self.size, self.disk_serial[i], self.position[i])
-            
+        sys.stdout.flush()
         if use_log:
             log(f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}")
 
