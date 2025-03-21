@@ -1,12 +1,13 @@
 import time
 import traceback
+from global_variables import g
 
-if_online = True
+if_online = False
+
 
 if not if_online:
-    with open("log.log", "w") as f:
+    with open("generated_files/log.log", "w") as f:
         pass
-
 
 def sys_break():
     if if_online:
@@ -21,7 +22,7 @@ def log(string):
     if if_online:
         return
     time_str = time.strftime("%H:%M:%S", time.localtime())
-    with open("log.log", "a+") as f:
+    with open("generated_files/log.log", "a+") as f:
         f.write(f"{time_str}:  {string} \n")
 
 
@@ -35,7 +36,19 @@ def log_disk(disk, tag_dict):
     if if_online:
         return
     import pickle
-    pickle.dump(disk, open("disk.pkl", "wb"))
+    pickle.dump(disk, open("generated_files/disk.pkl", "wb"))
+    
+    
+def log_empty_spaces(empty_spaces):
+    # print exist empty spaces in a list in line
+    if g.use_write_log:
+        log(f"empty spaces:")
+
+    for i in range(1, len(empty_spaces)):  # tag
+        for j in range(1, len(empty_spaces[i])):  # size_list
+            if empty_spaces[i][j]:
+                if g.use_write_log:
+                    log(f"tag: {i}, size: {j}, empty spaces: {empty_spaces[i][j]}")
 
 
 def print_error(e):

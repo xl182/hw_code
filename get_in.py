@@ -1,14 +1,5 @@
 import sys
-from utils import log
 from typing import Tuple
-
-
-
-def timestamp_action():
-    timestamp = int(input().split()[1])
-    print(f"TIMESTAMP {timestamp}")
-    log(f"TIMESTAMP {timestamp}\n\n")
-    sys.stdout.flush()
 
 
 def delete_input():
@@ -29,8 +20,8 @@ def write_input():
     Returns:
         _type_: write_objects: (id, size, tag)
     """
-    n_write = int(sys.stdin.readline())
-    write_objects = [list(map(int, sys.stdin.readline().split()))[:3] for _ in range(n_write)]
+    n_write = int(sys.stdin.readline().strip())
+    write_objects = [list(map(int, sys.stdin.readline().strip().split())) for _ in range(n_write)]
     return write_objects
 
 

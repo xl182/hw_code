@@ -20,7 +20,7 @@ def convert(arr, name, length):
 
 
 def main(interactor, data, player, debug, replay):
-    data_out = "result.txt"
+    data_out = "generated_files/result.txt"
 
     debug = convert(debug, "debug", DEBUG_LEN)
     replay = convert(replay, "replay", REPLAY_LEN)
@@ -56,7 +56,6 @@ if __name__ == '__main__':
     # 使用*，没有-d是None，-d没有任何参数是[]
     parser.add_argument('--debug', '-d', type=int, nargs='*')
     parser.add_argument('--replay', '-r', type=int, nargs='*')
-    parser.add_argument('--log', '-l', type=int, nargs='*')
 
     args = parser.parse_args()
 
@@ -65,13 +64,6 @@ if __name__ == '__main__':
 
     if args.replay is not None and len(args.replay) > REPLAY_LEN:
         parser.error("argument --replay/-r: accepts at most 10 arguments")
-        
-    if args.log is not None and args.log[0] == 1:
-        with open("enable_log.txt", "w") as f:
-            f.write("True")
-    else:
-        with open("enable_log.txt", "w") as f:
-            f.write("False")
 
     os.makedirs("replay", exist_ok=True)
 
