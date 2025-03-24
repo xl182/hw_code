@@ -1,4 +1,5 @@
 from typing import Any, List
+from utils import AutoSortedList, log
 
 
 class GlobalVariables:
@@ -7,13 +8,21 @@ class GlobalVariables:
     MAX_OBJECT_NUM = 100000 + 1
     MAX_REQUEST_NUM = 30000000 + 1  # maximum number of requests
     EXTRA_TIME = 105
-    MAX_OBJ_SIZE = 100
-    
+
+    SCORE_THRESHOLD = 0.1
+    JUMP = 1
+    PASS = 2
+    READ = 3
+
+    BASE_READ_COST = 64
+
     def __init__(self):
         self.use_write_log = False
-        
+
         self.tag_assignments: Any  # [volume index] the assignments of each tag
         self.disk_assignments: Any  # [tag] the assignments of each disk
+
+        self.disk: List
 
         self.delete_info: list
         self.write_info: list
@@ -22,7 +31,7 @@ class GlobalVariables:
         self.write_bounds: List[List[List[int]]]  # [[left_bound, right_bound] * 3] * M
         self.write_index: List[List[int]]  # [volume_index * 3] * M
 
-        self.write_dict: List[List[int]]  # [obj_tag, obj_size, position, index]
+        self.write_dict: List[List[List[int]]]  # [obj_tag, obj_size, position, index]
 
         self.empty_spaces: List[List[List[int]]]  # [(size, disk, pointer)] * M
         self.obj_relation: List[List[List[int]]]  # [[[left tag, right tag] * tag] * N]
@@ -32,11 +41,9 @@ class GlobalVariables:
         self.public_sizes: List[List[int]]
         self.left_allocate_sizes: List[int]  # the free allocate space of each volume
         self.left_public_sizes: List[int]  # the free public space of each volume
-  
-        self.read_requests: List[List[int]]  # [obj_id] * MAX_REQUEST_NUM id
-        self.current_needle: List[int]  # [position] * (N + 1)
 
-        self.disk: List
+        self.tag_max_obj_size = []
+        self.volume_max_obj_size = []
 
         self.current_timestamp = -1
         self.T = -1  # timestamps
@@ -45,9 +52,69 @@ class GlobalVariables:
         self.V = -1  # volume
         self.G = -1  # tokens
 
-        self.write_dict = [[] for i in range(self.MAX_OBJECT_NUM)]  # [obj_tag, obj_size, position, index]
-        self.read_requests = [[] for _ in range(self.MAX_REQUEST_NUM)]
+        self.write_dict = [
+            [] for i in range(self.MAX_OBJECT_NUM)
+        ]  # [obj_tag, obj_size, position, index]
+    
         self.tag_dict = {}
+        self.current_neddle: List[int]
+        self.request_data_list: List[AutoSortedList]  # [obj_id] * MAX_REQUEST_NUM id
+        self.read_obj_list: List[int]
+        self.last_read_cost: List[int]
+        self.if_last_read: List[bool]
+
+        self.volume_locked: List[bool]
+        self.waiting_reading_area: List[int]
+        self.pos_locked: List[List[bool]]
+        self.left_read_size: List[int]
+        self.left_pass_size: List[int]
+        self.current_read_obj: List[int]
+        self.formmer_request_id = [list() for _ in range(self.MAX_OBJECT_NUM)]
+        self.request_id_dict = [list() for _ in range(self.MAX_OBJECT_NUM)]
+        self.new_id_dict = [list() for _ in range(self.MAX_OBJECT_NUM)]
+        self.id_dict_locked = [False for _ in range(self.MAX_OBJECT_NUM)]
+        self.time_count = [0.0 for _ in range(20)]
+
+
+def init_variables(T, M, N, V, G, gv: GlobalVariables):
+    if gv.use_write_log:
+        log(f"T, M, N, V, G: {T, M, N, V, G}")
+
+    gv.tag_max_obj_size = [10 for _ in range(gv.M + 1)]
+    gv.volume_max_obj_size = [10 for _ in range(gv.N + 1)]
+
+    gv.disk = [[-1 for j in range(V + 1)] for i in range(N + 1)]  # init disk
+    gv.empty_spaces = [
+        [[] for i in range(gv.tag_max_obj_size[t])] for t in range(M + 1)
+    ]  # [[[] * size] * M + 1]
+
+    gv.write_index = [
+        [0 for _ in range(gv.COPY_NUM + 1)] for i in range(M + 1)
+    ]  # volume index of each tag
+    gv.write_bounds = [[[-1, -1] for j in range(gv.COPY_NUM + 1)] for i in range(M + 1)]
+    # the used space of each volume
+    gv.obj_relation = [[[] for j in range(M + 1)] for i in range(N + 1)]
+
+    gv.free_empty_spaces = [
+        [[] for j in range(gv.volume_max_obj_size[i])] for i in range(N + 1)
+    ]
+    gv.left_allocate_sizes = [0 if i != 0 else 0 for i in range(N + 1)]
+    gv.left_public_sizes = [0 if i != 0 else 0 for i in range(N + 1)]
+
+    gv.current_neddle = [1 for _ in range(gv.N + 1)]  # [current postition] * N
+    gv.request_data_list = [
+        AutoSortedList() for _ in range(gv.N + 1)
+    ]  # [postition] * N
+
+    gv.last_read_cost = [gv.BASE_READ_COST for _ in range(gv.N + 1)]
+    gv.if_last_read = [False for _ in range(gv.N + 1)]
+
+    gv.volume_locked = [False for _ in range(gv.N + 1)]
+    gv.waiting_reading_area = [0 for _ in range(gv.N + 1)]
+    gv.pos_locked = [[False for _ in range(gv.V + 1)] for i in range(gv.N + 1)]
+    gv.left_read_size = [0 for _ in range(gv.N + 1)]
+    gv.left_pass_size = [0 for _ in range(gv.N + 1)]
+    gv.current_read_obj = [0 for _ in range(gv.N + 1)]
 
 
 g = GlobalVariables()

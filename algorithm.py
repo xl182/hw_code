@@ -13,7 +13,6 @@ def allocate_files(file_sizes, N, V, timeout=1):
     while file_queue and time.time() - start_time < timeout:
         file_id, size = file_queue.popleft()
 
-        # 尝试分配原文件
         candidates = sorted(
             [(i, f["capacity"]) for i, f in enumerate(folders)], key=lambda x: -x[1]
         )
@@ -82,3 +81,27 @@ def calc_occupy(write_info, delete_info, M):
             cost_tmp[i] += write_info[i][j] - delete_info[i][j]
             max_cost_list[i] = max(max_cost_list[i], cost_tmp[i])
     return finnal_cost_list, max_cost_list
+
+
+def find_dense_regions_with_weights(arr, weights, threshold=10):
+    if len(arr) < 2:
+        return [], 0
+
+    dense_regions = []
+    current_region = [arr[0]]
+    current_weight = weights[0]
+
+    for i in range(1, len(arr)):
+        if abs(arr[i] - arr[i - 1]) <= threshold:
+            current_region.append(arr[i])
+            current_weight += weights[i]
+        else:
+            if len(current_region) > 1:
+                dense_regions.append((current_region, current_weight))
+            current_region = [arr[i]]
+            current_weight = weights[i]
+
+    if len(current_region) > 1:
+        dense_regions.append((current_region, current_weight))
+
+    return dense_regions, len(dense_regions)
