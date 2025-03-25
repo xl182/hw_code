@@ -1,13 +1,12 @@
 from copy import deepcopy
+import bisect
 import inspect
 import math
 from get_in import read_input
-from global_variables import g
-
-import bisect
 
 from output import ReadOutput
-from utils import CRITICAL, ERROR, WARN, WARNING, log
+from utils import rt, ERROR, log
+from global_variables import g
 
 c_frame = inspect.currentframe
 
@@ -87,12 +86,12 @@ def do_read(index, left_token, ro: ReadOutput):
         if left_token[index] < cost:
             left_token[index] = 0
             return
-        
+
         n_th_block = g.current_neddle[index] - g.next_position[index]
-        g.new_obj_blocks[g.current_read_obj[index]][n_th_block] = True
-        log(f"read_position: {g.current_neddle[index]}", c_frame=c_frame())
+        g.new_obj_blocks[g.current_read_obj[index]] |= 2 ** n_th_block
+        # log(f"read_position: {g.current_neddle[index]}", c_frame=c_frame())
         ro.add_read(index)
-        
+
         g.left_read_size[index] -= 1
         g.if_last_read[index] = True
         g.last_read_cost[index] = cost
@@ -104,7 +103,7 @@ def do_read(index, left_token, ro: ReadOutput):
     # read finished
     g.current_read_obj[index] = 0
 
-    if g.new_obj_blocks[obj_id].count(True) == size:
+    if g.new_obj_blocks[obj_id] == (2 ** size - 1):
         log(f"current read all blocks, emit all", c_frame=c_frame())
         ro.add_finished_request(g.request_id_dict[obj_id])
         ro.add_finished_request(g.new_id_dict[obj_id])
@@ -136,6 +135,7 @@ def read_action():
     n_read, read_req = read_input()
     ro = ReadOutput(g.N)
 
+    rt.set_start_time()
     for req_id, obj_id in read_req[:]:
         # log(f"request id: {req_id}, obj_id: {obj_id}", c_frame=c_frame())
         g.new_id_dict[obj_id].append(req_id)
@@ -144,17 +144,14 @@ def read_action():
         for copy in copys:
             tag, size, pos, index = copy
             g.request_data_list[index].insert(pos, obj_id)
-
-            if obj_id not in g.current_read_obj:
-                g.read_obj_blocks[obj_id] = [False for _ in range(size)]
-            g.new_obj_blocks[obj_id] = [False for _ in range(size)]
-            g.obj_size[obj_id] = size
-            
-            g.if_disk_exist_obj[index][pos] = True
+        g.new_obj_blocks[obj_id] = 0
+        g.obj_size[obj_id] = size
+    rt.record_time("variable init")
 
     # left_size = sum([sum(g.request_id_dict[i]) for i in range(len(g.request_id_dict))])
     # log(f"left size: {left_size}", mode=ERROR, c_frame=c_frame())
 
+    rt.set_start_time
     left_token = [g.G for i in range(g.N + 1)]
     request_size = [
         g.V + 1 if i == 0 else len(g.request_data_list[i].pos_list)
@@ -163,6 +160,7 @@ def read_action():
     sorted_indices = sorted(range(len(request_size)), key=lambda i: request_size[i])
     request_size = [request_size[i] for i in sorted_indices]
     selected_list = sorted_indices
+    rt.record_time("sort request")
     for i in selected_list[:-1]:
         # log(f"current index: {i}", mode=WARNING, new_line=True, c_frame=c_frame())
         count = 0
@@ -176,22 +174,26 @@ def read_action():
             #     f"left pass size: {g.left_pass_size[i]}, left read size: {g.left_read_size[i]}, left token: {left_token[i]}",
             #     c_frame=c_frame(),
             # )
+            rt.set_start_time
             if g.left_pass_size[i]:
                 do_pass(i, left_token, ro)
                 # log(f"left pass size: {g.left_pass_size[i]}", c_frame=c_frame())
                 if g.left_pass_size[i]:
                     break
+            rt.record_time("do pass")
 
+            rt.set_start_time()
             if g.left_read_size[i]:
                 do_read(i, left_token, ro)
                 # log(f"left read size: {g.left_read_size[i]}", c_frame=c_frame())
                 if g.left_read_size[i]:
                     break
                 # if g.left_read_size[i]: break
+            rt.record_time("do read")
 
             if len(g.request_data_list[i].pos_list) == 0:
                 break
-
+            rt.set_start_time()
             if g.current_read_obj[i] == 0:
                 # find the next obj to read, and move to the next position
                 next_position_index = find_larger_pos(
@@ -206,9 +208,7 @@ def read_action():
 
                 # log(f"current position: {g.current_neddle[i]}", c_frame=c_frame())
                 # log(f"find next read position: {g.next_position[i]}", c_frame=c_frame())
-                
                 pass_size = calc_distance(g.next_position[i], g.current_neddle[i])
-                
                 # if pass_size is larger than the token, then jump to the next position
                 # log(
                 #     f"calcuated pass size: {pass_size}, left_token: {left_token[i]}",
@@ -259,5 +259,6 @@ def read_action():
                         #     c_frame=c_frame(),
                         # )
                     break
+            rt.record_time("find next read position")
 
     ro.print_info()

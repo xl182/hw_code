@@ -33,12 +33,6 @@ def do_delete_object(delete_objs_id):
 
         g.empty_spaces[tag][size].append(copys)
         g.write_dict[obj_id] = []
-        if g.use_write_log:
-            log(f"delete current id: {obj_id}")
-            log(f"add empty spaces: {copys}")
-            log(
-                f"delete finished (id: {obj_id})(tag: {g.tag_dict[obj_id]}): {g.write_dict[obj_id]}"
-            )
 
 
 def delete_action():

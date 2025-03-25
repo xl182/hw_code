@@ -1,7 +1,9 @@
 import bisect
 import sys
+import time
 import traceback
 import logging
+
 
 if_online = False
 use_write_log = False
@@ -66,8 +68,8 @@ WARN = WARNING
 INFO = 20
 
 
-def log(string, mode=logging.INFO, new_line=False, c_frame=None):
-    if if_online or (not use_read_log):
+def log(string, if_output=False, mode=logging.INFO, new_line=False, c_frame=None):
+    if if_online or (not use_read_log) and (not if_output):
         return
     if new_line:
         logging.log(INFO, "\n")
@@ -87,8 +89,9 @@ def log_disk(disk, tag_dict):
             disk[i][j] = obj_tag
     if if_online:
         return
-    
+
     import pickle
+
     pickle.dump(disk, open("generated_files/disk.pkl", "wb"))
 
 
@@ -106,3 +109,40 @@ def print_error(e):
     log(f"错误信息: {exc_value}")
     log(f"Traceback 对象: {traceback.format_tb(exc_traceback)[0]}")
     sys_break()
+
+
+class RecordTimer:
+    def __init__(self):
+        self.end_time = 0
+        self.start_time = 0
+        self.time_list = [0.0 for _ in range(20)]
+        self.annotations = {}
+        self.time_index = 1
+
+    def init_timer(self):
+        self.end_time = time.time()
+        self.time_list = [0.0 for _ in range(20)]
+
+    def set_start_time(self):
+        self.start_time = time.time()
+
+    def record_time(self, annotation=""):
+        if annotation not in self.annotations.keys():
+            self.time_index += 1
+            self.annotations[annotation] = self.time_index
+            index = self.time_index
+        else:
+            index = self.annotations[annotation]
+        self.end_time = time.time()
+        self.time_list[index] += self.end_time - self.start_time
+        self.end_time = self.start_time
+
+    def log_time(self):
+        for annotation, time_index in self.annotations.items():
+            if self.time_list[time_index] == 0:
+                continue
+            log(f"{annotation}, cost time: {self.time_list[time_index]}", if_output=True)
+        log("\n", if_output=True)
+
+
+rt: RecordTimer = RecordTimer()

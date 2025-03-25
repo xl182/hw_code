@@ -71,13 +71,11 @@ class GlobalVariables:
         self.request_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
         self.new_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
         self.next_position: List[int]
-        self.time_count = [0.0 for _ in range(20)]
-        self.read_obj_blocks: List[List[bool]] = [[] for _ in range(MAX_OBJECT_NUM + 1)]
-        self.new_obj_blocks: List[List[bool]] = [[] for _ in range(MAX_OBJECT_NUM + 1)]
-        self.obj_read_timestamp: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
-        self.obj_size = [0 for _ in range(MAX_OBJECT_NUM + 1)]
-        
-        self.if_disk_exist_obj: List[List[bool]]
+        self.obj_size: List[int]
+
+        self.read_obj_blocks: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+        self.new_obj_blocks: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+        self.read_disk_obj: List[List[int]]
 
 
 def init_variables(T, M, N, V, G, gv: GlobalVariables):
@@ -117,7 +115,8 @@ def init_variables(T, M, N, V, G, gv: GlobalVariables):
     gv.left_pass_size = [0 for _ in range(gv.N + 1)]
     gv.current_read_obj = [0 for _ in range(gv.N + 1)]
     gv.next_position = [0 for _ in range(gv.N + 1)]
-    
-    gv.if_disk_exist_obj = [[False for j in range(V + 1)] for i in range(N + 1)]
+    gv.read_disk_obj = [[0 for j in range(V + 1)] for i in range(N + 1)]
+    gv.obj_size = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+
 
 g = GlobalVariables()
