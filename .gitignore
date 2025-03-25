@@ -4,6 +4,7 @@
 /replay/
 /demos/
 /note/
+/.vscode/
 *.pdf
 *.pyc
 *.txt

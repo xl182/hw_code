@@ -11,6 +11,14 @@ def do_delete_object(delete_objs_id):
             tag, size, pos, index = copy
             for s in range(size):
                 g.disk[index][pos + s] = -1
+            if obj_id in g.request_data_list[index].obj_id_list:
+                obj_index = g.request_data_list[index].obj_id_list.index(obj_id)
+                g.request_data_list[index].remove(obj_index)
+            if obj_id in g.current_read_obj:
+                for i in range(len(g.current_read_obj)):
+                    g.current_read_obj[i] = 0
+                    g.left_read_size[i] = 0
+                    g.left_pass_size[i] = 0
 
         # enlarge size list of empty spaces
         tag, size, pos, index = copys[0]
@@ -40,6 +48,7 @@ def delete_action():
     abort_request_id = []
     for obj_id in delete_obj_id:
         abort_request_id.extend(g.request_id_dict[obj_id])
+        abort_request_id.extend(g.new_id_dict[obj_id])
 
     # delete objects
     if n_delete != 0:

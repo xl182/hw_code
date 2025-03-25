@@ -1,4 +1,6 @@
+from re import L
 from typing import Any, List
+from demos.python.main import MAX_OBJECT_NUM
 from utils import AutoSortedList, log
 
 
@@ -55,25 +57,27 @@ class GlobalVariables:
         self.write_dict = [
             [] for i in range(self.MAX_OBJECT_NUM)
         ]  # [obj_tag, obj_size, position, index]
-    
+
         self.tag_dict = {}
         self.current_neddle: List[int]
         self.request_data_list: List[AutoSortedList]  # [obj_id] * MAX_REQUEST_NUM id
-        self.read_obj_list: List[int]
         self.last_read_cost: List[int]
         self.if_last_read: List[bool]
-
         self.volume_locked: List[bool]
         self.waiting_reading_area: List[int]
-        self.pos_locked: List[List[bool]]
         self.left_read_size: List[int]
         self.left_pass_size: List[int]
         self.current_read_obj: List[int]
-        self.formmer_request_id = [list() for _ in range(self.MAX_OBJECT_NUM)]
-        self.request_id_dict = [list() for _ in range(self.MAX_OBJECT_NUM)]
-        self.new_id_dict = [list() for _ in range(self.MAX_OBJECT_NUM)]
-        self.id_dict_locked = [False for _ in range(self.MAX_OBJECT_NUM)]
+        self.request_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
+        self.new_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
+        self.next_position: List[int]
         self.time_count = [0.0 for _ in range(20)]
+        self.read_obj_blocks: List[List[bool]] = [[] for _ in range(MAX_OBJECT_NUM + 1)]
+        self.new_obj_blocks: List[List[bool]] = [[] for _ in range(MAX_OBJECT_NUM + 1)]
+        self.obj_read_timestamp: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+        self.obj_size = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+        
+        self.if_disk_exist_obj: List[List[bool]]
 
 
 def init_variables(T, M, N, V, G, gv: GlobalVariables):
@@ -108,13 +112,12 @@ def init_variables(T, M, N, V, G, gv: GlobalVariables):
 
     gv.last_read_cost = [gv.BASE_READ_COST for _ in range(gv.N + 1)]
     gv.if_last_read = [False for _ in range(gv.N + 1)]
-
     gv.volume_locked = [False for _ in range(gv.N + 1)]
-    gv.waiting_reading_area = [0 for _ in range(gv.N + 1)]
-    gv.pos_locked = [[False for _ in range(gv.V + 1)] for i in range(gv.N + 1)]
     gv.left_read_size = [0 for _ in range(gv.N + 1)]
     gv.left_pass_size = [0 for _ in range(gv.N + 1)]
     gv.current_read_obj = [0 for _ in range(gv.N + 1)]
-
+    gv.next_position = [0 for _ in range(gv.N + 1)]
+    
+    gv.if_disk_exist_obj = [[False for j in range(V + 1)] for i in range(N + 1)]
 
 g = GlobalVariables()

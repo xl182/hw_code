@@ -26,10 +26,9 @@ class WriteOutput(object):
                 disk, self.write_id, self.size, self.disk_serial[i], self.position[i]
             )
         sys.stdout.flush()
-        if use_log:
-            log(
-                f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}"
-            )
+        log(
+            f"write {self.write_id} (size: {self.size})to disk {self.disk_serial} at position {self.position}, size: {self.size}"
+        )
 
 
 class ReadOutput:
@@ -51,9 +50,10 @@ class ReadOutput:
         self.action_list[index].extend([self.PASS, pos])
 
     def add_finished_request(self, request_id):
-        self.finished_request.extend(request_id)
+        self.finished_request.extend(request_id)  # request_id
 
     def print_info(self):
+        log(f"read finished: req_id: {self.finished_request}")
         output = []  # Cache output to reduce I/O overhead
 
         for actions in self.action_list[1:]:  # Skip the first empty list

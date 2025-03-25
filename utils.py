@@ -4,8 +4,8 @@ import traceback
 import logging
 
 if_online = False
-use_write_log = True
-use_read_log = True
+use_write_log = False
+use_read_log = False
 
 
 if not if_online:
@@ -20,20 +20,20 @@ if not if_online:
 
 class AutoSortedList:
     def __init__(self):
-        self.data_list = []  # (pos, size, time_stamp, tag) * N
+        self.obj_id_list = []  # (pos, size, time_stamp, tag) * N
         self.pos_list = []  # pos * N
-        self.id_list = []  # id * N
 
-    def insert(self, value):
+    def insert(self, pos, obj_id):
         # Insert into data_list based on pos (value[0])
-        pos, obj_id = value[0], value[2]
+        if pos in self.pos_list:
+            return
+
         # Find the insertion index for data_list
-        index = bisect.bisect_left([x[0] for x in self.data_list], pos)
-        self.data_list.insert(index, value)
+        index = bisect.bisect_left(self.pos_list, pos)
         # Insert into pos_list
         self.pos_list.insert(index, pos)
         # Insert into id_list
-        self.id_list.insert(index, obj_id)
+        self.obj_id_list.insert(index, obj_id)
 
     def remove(self, index):
         """reomve value by data_list
@@ -46,9 +46,8 @@ class AutoSortedList:
         """
         # Find the index of the value in pos_list
         # Ensure the value exists at the found index
-        del self.data_list[index]
         del self.pos_list[index]
-        del self.id_list[index]
+        del self.obj_id_list[index]
 
 
 def sys_break():
@@ -56,7 +55,6 @@ def sys_break():
         return
     print("================================")
     print("System break")
-    log("System break")
     exit(0)
 
 
@@ -89,8 +87,8 @@ def log_disk(disk, tag_dict):
             disk[i][j] = obj_tag
     if if_online:
         return
+    
     import pickle
-
     pickle.dump(disk, open("generated_files/disk.pkl", "wb"))
 
 
