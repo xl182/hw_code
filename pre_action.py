@@ -4,7 +4,7 @@ from typing import List
 from algorithm import allocate_files, calc_occupy
 from get_in import pre_input
 from global_variables import g, init_variables
-from utils import AutoSortedList, log
+from utils import log
 
 
 def allocate_spaces(

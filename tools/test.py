@@ -1,6 +1,3 @@
-for i in range(10):
-    print(a)
-    if (i != 9):
-        a = i
-    
-print(a)
+from bisect import bisect_right
+
+print(bisect_right([], 6))  # 3
