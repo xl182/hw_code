@@ -5,7 +5,7 @@ import traceback
 import logging
 
 
-if_online = False
+if_online = True
 use_write_log = False
 use_read_log = False
 
@@ -19,37 +19,38 @@ if not if_online:
         filemode="w",
     )
 
+import bisect
 
-class AutoSortedList:
+
+class OrderedList:
     def __init__(self):
-        self.obj_id_list = []  # (pos, size, time_stamp, tag) * N
-        self.pos_list = []  # pos * N
+        self._list = []
 
-    def insert(self, pos, obj_id):
-        # Insert into data_list based on pos (value[0])
-        if pos in self.pos_list:
-            return
+    def insert(self, value):
+        index = bisect.bisect_left(self._list, value)
+        if index == len(self._list) or self._list[index] != value:
+            bisect.insort_left(self._list, value)
 
-        # Find the insertion index for data_list
-        index = bisect.bisect_left(self.pos_list, pos)
-        # Insert into pos_list
-        self.pos_list.insert(index, pos)
-        # Insert into id_list
-        self.obj_id_list.insert(index, obj_id)
+    def delete(self, value):
+        index = bisect.bisect_left(self._list, value)
+        if index < len(self._list) and self._list[index] == value:
+            del self._list[index]
 
-    def remove(self, index):
-        """reomve value by data_list
+    def find_next_position(self, value):
+        index = bisect.bisect_right(self._list, value)
+        if index == len(self._list):
+            return self._list[0]
+        return self._list[index]
 
-        Args:
-            value (_type_): _description_
+    def __contains__(self, value):
+        index = bisect.bisect_left(self._list, value)
+        return index < len(self._list) and self._list[index] == value
 
-        Raises:
-            ValueError: _description_
-        """
-        # Find the index of the value in pos_list
-        # Ensure the value exists at the found index
-        del self.pos_list[index]
-        del self.obj_id_list[index]
+    def __repr__(self):
+        return str(self._list)
+
+    def __len__(self):
+        return len(self._list)
 
 
 def sys_break():
@@ -99,49 +100,56 @@ def print_error(e):
     if if_online:
         return
     error_stack = traceback.format_exc()
-    log("[Traceback 输出]")
-    log(error_stack)
+    log("[Traceback]", if_output=True)
+    log(error_stack, if_output=True)
 
     exc_type, exc_value, exc_traceback = sys.exc_info()
-    log("\n[sys.exc_info() 输出]")
+    log("\n[sys.exc_info()]", if_output=True)
     if exc_type:
-        log(f"异常类型: {exc_type.__name__}")
-    log(f"错误信息: {exc_value}")
-    log(f"Traceback 对象: {traceback.format_tb(exc_traceback)[0]}")
+        log(f"{exc_type.__name__}", if_output=True)
+    log(f"{exc_value}", if_output=True)
+    log(f"Traceback: {traceback.format_tb(exc_traceback)[0]}", if_output=True)
     sys_break()
 
 
 class RecordTimer:
     def __init__(self):
         self.end_time = 0
-        self.start_time = 0
+        self.start_time = [0.0 for _ in range(20)]
         self.time_list = [0.0 for _ in range(20)]
         self.annotations = {}
         self.time_index = 1
 
-    def init_timer(self):
-        self.end_time = time.time()
-        self.time_list = [0.0 for _ in range(20)]
-
-    def set_start_time(self):
-        self.start_time = time.time()
-
-    def record_time(self, annotation=""):
+    def get_index(self, annotation=""):
         if annotation not in self.annotations.keys():
             self.time_index += 1
             self.annotations[annotation] = self.time_index
             index = self.time_index
         else:
             index = self.annotations[annotation]
+        return index
+
+    def init_timer(self):
         self.end_time = time.time()
-        self.time_list[index] += self.end_time - self.start_time
+        self.time_list = [0.0 for _ in range(20)]
+
+    def set_start_time(self, annotation=""):
+        index = self.get_index(annotation)
+        self.start_time[index] = time.time()
+
+    def record_time(self, annotation=""):
+        index = self.get_index(annotation)
+        self.end_time = time.time()
+        self.time_list[index] += self.end_time - self.start_time[index]
         self.end_time = self.start_time
 
     def log_time(self):
         for annotation, time_index in self.annotations.items():
             if self.time_list[time_index] == 0:
                 continue
-            log(f"{annotation}, cost time: {self.time_list[time_index]}", if_output=True)
+            log(
+                f"{annotation}, cost time: {self.time_list[time_index]}", if_output=True
+            )
         log("\n", if_output=True)
 
 

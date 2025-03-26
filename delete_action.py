@@ -11,9 +11,10 @@ def do_delete_object(delete_objs_id):
             tag, size, pos, index = copy
             for s in range(size):
                 g.disk[index][pos + s] = -1
-            if obj_id in g.request_data_list[index].obj_id_list:
-                obj_index = g.request_data_list[index].obj_id_list.index(obj_id)
-                g.request_data_list[index].remove(obj_index)
+
+            g.request_pos_list[index].delete(pos)
+            g.disk_obj[index][pos] = 0
+            
             if obj_id in g.current_read_obj:
                 for i in range(len(g.current_read_obj)):
                     g.current_read_obj[i] = 0
