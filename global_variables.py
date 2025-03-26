@@ -1,6 +1,4 @@
-from re import L
 from typing import Any, List
-from demos.python.main import MAX_OBJECT_NUM
 from utils import OrderedList, log
 
 
@@ -67,13 +65,13 @@ class GlobalVariables:
         self.left_read_size: List[int]
         self.left_pass_size: List[int]
         self.current_read_obj: List[int]
-        self.request_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
-        self.new_id_dict = [[] for j in range(MAX_OBJECT_NUM + 1)]
+        self.request_id_dict = [[] for j in range(self.MAX_OBJECT_NUM + 1)]
+        self.new_id_dict = [[] for j in range(self.MAX_OBJECT_NUM + 1)]
         self.next_position: List[int]
         self.obj_size: List[int]
 
-        self.read_obj_blocks: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
-        self.new_obj_blocks: List[int] = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+        self.read_obj_blocks: List[int] = [0 for _ in range(self.MAX_OBJECT_NUM + 1)]
+        self.new_obj_blocks: List[int] = [0 for _ in range(self.MAX_OBJECT_NUM + 1)]
         self.read_disk_obj: List[List[int]]
         
         self.disk_obj: List[List[int]]
@@ -114,7 +112,7 @@ def init_variables(T, M, N, V, G, gv: GlobalVariables):
     gv.current_read_obj = [0 for _ in range(gv.N + 1)]
     gv.next_position = [0 for _ in range(gv.N + 1)]
     gv.read_disk_obj = [[0 for j in range(V + 1)] for i in range(N + 1)]
-    gv.obj_size = [0 for _ in range(MAX_OBJECT_NUM + 1)]
+    gv.obj_size = [0 for _ in range(gv.MAX_OBJECT_NUM + 1)]
     
     gv.disk_obj = [[0 for j in range(V + 1)] for i in range(N + 1)]
 
